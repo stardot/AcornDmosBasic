@@ -1,0 +1,106 @@
+Comments to DBASIC:11/2/86
+
+Source program DBAS01 to DBAS12, corresponding to CBAS01 to CBAS0C 
+
+Compiled Program DBASIC
+
+Alterations from CBASIC to DBASIC:
+
+1) FP division slightly speeded up by determining the last 3 bits by
+means of single-byte comparisons and subtractions. Also FTMP is not
+used, the intermediate bytes being put into stack.
+
+2) SQR speeded up 30%: A direct check is made whether the first 2
+sig. bits give 2 or 3; comparison tests and subtractions are done on 3
+bytes only (as the last two bytes in FWRK are 0 to start with, and by
+the time they are altered, they can no longer affect the result); FTMP
+is not used, and for the last byte the routine merges with FDIV.
+
+3) SIN/COS speeded up 25%, TAN by 35%: The argument is first reduced
+to <pi/4, the multiplicATION Q = ARG * 2/PI and the rounding being
+done only to the accuracy required, and the reduction ARG - Q*PI/2
+with a 5-byte mantissa in FWRK. The cont. fraction calculates
+t=TAN(A/2), the 2nd convergent giving sufficient accuracy.
+
+4) EXP speeded up by 25-75%, depending on size of argument. Argument
+is first reduced to <ln2/2, by a similar reduction as for SIN/COS; the
+cont. fr. evaluates t=TANH(A/2), 2nd convergent being again adequate
+in all cases. EXP(A) is found as (1+t)/(1-t), the multiple of ln2 in
+the original argument only affects the characteristic (exponent) of
+the result. If MOD(ARG) >= 64, it calculates EXP(ARG/2) and squares
+the result, to trap any residual overflow.
+
+5) LN is shortened by 20%: after scaling to between LN(1/2) and LN2,
+with special regard to the smallest possible characteristic, LN is
+calculated as 2*ATANH((A-1)/(A+1)). Again the 2nd convergent of the
+cont. fr. is adequate in all cases. Adjustment for the initial
+characteristic is done with a 5-bit mantissa for LN2.
+
+6) ATN is carried out on A, 1/A, or (1-A)/(A+1), whichever is the
+smallest, the results being R, PI/2-R and PI/4-R.  Here up to the 3rd
+convergent may have to be used, and the last coefficients somewhat
+modified to simulate the 4th conv.
+
+NOTE: The cont. fr. for TAN and TANH and for ATN and ATANH differ only
+in the sign of the square of the argument. The tabulated coefficients
+are scaled to make the first one 1 instead of 1/3 and the variable is
+3/A^2 instead of 1/A^2; thereby one multiplication can be omitted.
+
+7) For powers A^n% the INTEGER index is preserved throughout. A
+special subroutine for squaring has been written which does not store
+and recall the operand and which clears the last byte of the
+multiplier, doubling that of the multiplicand. The argument is
+repeatedly squared, intermediate results being stacked according to
+the bits forming the index, and eventually incorporated into a
+product.  The time saving is 15% for ^2 going up to 75% for large n%.
+
+8) DIV and MOD have been completely re-written, with emphasis on small
+INTEGERs; up to 30% of time can be saved.  A minor change has been
+made in INTEGER multiplication with marginal savings in both time and
+storage. Minor changes have also been made in the sorting out of +,-,*
+and /; these have freed some space without effect on timing.
+
+9) FNEG and INT have been simplified, ACS put immediately before
+PISUB, FFRAC and FTEST eliminated, SFIX and FFIX combined into a
+single routine.
+
+10) RND has been slightly altered, there being now 2 repeats instead
+of 4, saving 60 cycles per call. RND(1) has been slightly simplified,
+and RND(n%) reordered cutting the time by 35%.
+
+11) The input of HEX numbers has been speeded up, so has the INPUT of
+INTEGERS and REALS. This has involved the amalgamation of FTENX,
+FTENFX and FTENFQ which now no longer make use of FWRK, but of the
+X-register. The saving is 10-25%.
+
+12) For PRINT the rounding has been speeded up considerably at the
+cost of storing several values of 0.5*0.01^n. Also the number to be
+printed out is transferred to FWRK, not stored and recalled.  The
+over-all saving in time is about 40%.
+
+13) Minor changes have been made to <,>,= and their combinations and
+to the compariosons on which they are based. Saving both in time and
+space is marginal.
+
+14) Some time savings have been made when numbers appear in brackets
+and are automatically turned into INTEGERs, such as after POINT(,
+LEFT$(, Right$(, and in the subscripts of ARRAY elements.  However
+thereby combinations with logical operators are no longer allowed,
+unless they are enclosed in another pair of brackets. Thus if you want
+to take the largest even value not exceeding n% as an index, then
+ARR(n% AND -2) would now lead to an error, but ARR( (n% AND -2) ) or
+ARR(n% DIV 2 *2) would still be OK.  If this restriction is not
+acceptable, I can undo this modification.
+
+15) There are a number of other minor alterations.
+
+16) The source program DBAS01-DBAS12 and the compiled program DBASIC
+begin at &8000 and end at &BFFF.  The last 42 bytes are 0, and
+throughout the program there are blocks of instructions LDA &400
+denoting gaps (a total of 81 such pseudo instructions in addition to 2
+genuine ones). The program as constituted at present has therefore 285
+free bytes.  I have not touched CBAS0A = DBAS10, but I notice that in
+location B121 after FNARGP there is a sequence of instructions PLA:
+PLA: STA ...: STA ...+1 .  This does not appear right to me, but I
+only noticed it to-day and I have not had the time to examine it
+myself.
