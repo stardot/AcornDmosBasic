@@ -72,3 +72,9 @@ But it doesn't yet include the ROM service call handler, so the binary
 is very different.
 
 More investigation is needed here.
+
+Acknowledgements:
+=================
+
+Many thanks to Paul Fellows (ex Acornsoft) for discovering these
+long-lost sources and making them available to the Acorn community.
